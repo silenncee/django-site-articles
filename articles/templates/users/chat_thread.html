@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Чат с @{{ peer.username }} - IdeaVault{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-7 mx-auto">
+        <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{% url 'users:chat_inbox' %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left"></i></a>
+                    <a href="{% url 'users:profile' peer.username %}" class="text-decoration-none fw-semibold">@{{ peer.username }}</a>
+                </div>
+                {% if peer_profile.status == 'online' %}
+                    <span class="badge bg-success">онлайн</span>
+                {% endif %}
+            </div>
+            <div class="card-body bg-light" style="min-height: 320px; max-height: 480px; overflow-y: auto;">
+                {% for m in message_list %}
+                    <div class="mb-2 {% if m.sender_id == user.id %}text-end{% endif %}">
+                        <div class="d-inline-block text-start px-3 py-2 rounded-3 {% if m.sender_id == user.id %}bg-primary text-white{% else %}bg-white border{% endif %}" style="max-width: 85%;">
+                            <div class="small">{{ m.body|linebreaksbr }}</div>
+                            <div class="small {% if m.sender_id == user.id %}text-white-50{% else %}text-muted{% endif %} mt-1">{{ m.created_at|date:"d.m.Y H:i" }}</div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted text-center py-5 mb-0">Нет сообщений. Напишите первым.</p>
+                {% endfor %}
+            </div>
+            <div class="card-footer">
+                {% if can_send %}
+                    <form method="post" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <textarea name="body" class="form-control" rows="2" maxlength="4000" placeholder="Сообщение…" required></textarea>
+                        <button type="submit" class="btn btn-primary align-self-end"><i class="fas fa-paper-plane"></i></button>
+                    </form>
+                {% else %}
+                    <p class="text-muted small mb-0">Отправка недоступна.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load tz %}
+
+{% block title %}{{ idea.title }} - IdeaVault{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Основная идея -->
+        <div class="card mb-4">
+            {% if idea.image %}
+                <div class="text-center p-3">
+                    <img src="{{ idea.image.url }}" class="img-fluid" alt="{{ idea.title }}">
+                </div>
+            {% endif %}
+
+            <div class="card-body">
+                <h1 class="card-title">{{ idea.title }}</h1>
+
+                <div class="d-flex align-items-center mb-3">
+                    <a href="{% url 'users:profile' idea.author.username %}" class="d-flex align-items-center text-decoration-none me-3">
+                        {% if idea.author.profile.avatar %}
+                            <img src="{{ idea.author.profile.avatar.url }}" class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;" alt="{{ idea.author.username }}">
+                        {% else %}
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <strong>{{ idea.author.username }}</strong>
+                            <br>
+                            <small class="text-muted">{{ idea.created_at|date:"d.m.Y H:i" }}</small>
+                        </div>
+                    </a>
+
+                    <!-- Кнопка подписки на автора -->
+                    {% if user.is_authenticated and user != idea.author %}
+                        <form action="{% url 'users:follow_toggle' idea.author.username %}" method="post" class="ms-auto">
+                            {% csrf_token %}
+                            {% if is_following %}
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-user-minus"></i> Отписаться
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-user-plus"></i> Подписаться
+                                </button>
+                            {% endif %}
+                        </form>
+                    {% endif %}
+                </div>
+
+                <p class="card-text lead">{{ idea.content|linebreaks }}</p>
+
+                <!-- Аудио плеер -->
+                {% if idea.has_audio %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-music"></i> Слушать трек</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if idea.audio_title %}
+                                <h6 class="mb-3">{{ idea.audio_title }}</h6>
+                            {% endif %}
+
+                            <div class="audio-player">
+                                <audio controls class="w-100">
+                                    <source src="{{ idea.audio.url }}" type="audio/mpeg">
+                                    Ваш браузер не поддерживает аудио.
+                                </audio>
+                            </div>
+
+                            <div class="mt-2 text-muted small">
+                                <i class="fas fa-download"></i>
+                                <a href="{{ idea.audio.url }}" download class="text-muted">
+                                    Скачать ({{ idea.audio.size|filesizeformat }})
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Лайки и действия -->
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div>
+                        {% if user.is_authenticated %}
+                            <form action="{% url 'ideas:like_toggle' idea.id %}" method="post" class="d-inline like-form" id="like-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger like-btn">
+                                    <i class="fas fa-heart {% if user_liked %}text-danger{% endif %}"></i>
+                                    <span class="like-count">{{ idea.total_likes }}</span>
+                                </button>
+                            </form>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-outline-danger">
+                                <i class="fas fa-heart"></i> {{ idea.total_likes }}
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    {% if user == idea.author %}
+                        <div>
+                            <a href="{% url 'ideas:idea_edit' idea.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-edit"></i> Редактировать
+                            </a>
+                            <a href="{% url 'ideas:idea_delete' idea.id %}" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash"></i> Удалить
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Комментарии -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-comments"></i> Комментарии ({{ idea.comments.count }})
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Форма комментария -->
+                {% if user.is_authenticated %}
+                    <form action="{% url 'ideas:add_comment' idea.id %}" method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <textarea name="content" class="form-control" rows="3" placeholder="Напишите комментарий..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Отправить
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-info">
+                        <a href="{% url 'login' %}" class="alert-link">Войдите</a>, чтобы оставить комментарий.
+                    </div>
+                {% endif %}
+
+                <!-- Список комментариев -->
+                {% for comment in comments %}
+                    <div class="comment mb-3" id="comment-{{ comment.id }}">
+                        <div class="d-flex">
+                            <a href="{% url 'users:profile' comment.author.username %}" class="me-2">
+                                {% if comment.author.profile.avatar %}
+                                    <img src="{{ comment.author.profile.avatar.url }}" class="rounded-circle" width="32" height="32" style="object-fit: cover;" alt="{{ comment.author.username }}">
+                                {% else %}
+                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <i class="fas fa-user text-white small"></i>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>
+                                            <a href="{% url 'users:profile' comment.author.username %}" class="text-decoration-none">
+                                                {{ comment.author.username }}
+                                            </a>
+                                        </strong>
+                                        <small class="text-muted ms-2">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                                    </div>
+
+                                    {% if user == comment.author or user == idea.author %}
+                                        <a href="{% url 'ideas:delete_comment' comment.id %}"
+                                           class="btn btn-sm btn-link text-danger"
+                                           onclick="return confirm('Удалить комментарий?')">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                                <p class="mb-1">{{ comment.content|linebreaks }}</p>
+
+                                <!-- Кнопка ответа -->
+                                {% if user.is_authenticated %}
+                                    <button class="btn btn-sm btn-link reply-btn ps-0" data-comment-id="{{ comment.id }}">
+                                        <i class="fas fa-reply"></i> Ответить
+                                    </button>
+
+                                    <!-- Форма ответа (скрыта) -->
+                                    <div class="reply-form mt-2 mb-3" id="reply-form-{{ comment.id }}" style="display: none;">
+                                        <form action="{% url 'ideas:add_comment' idea.id %}" method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                                            <div class="input-group">
+                                                <textarea name="content" class="form-control form-control-sm" rows="2" placeholder="Ваш ответ..." required></textarea>
+                                                <button type="submit" class="btn btn-sm btn-primary">Отправить</button>
+                                                <button type="button" class="btn btn-sm btn-secondary cancel-reply">Отмена</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Ответы -->
+                                {% for reply in comment.replies.all %}
+                                    <div class="reply mt-2 ms-4">
+                                        <div class="d-flex">
+                                            <a href="{% url 'users:profile' reply.author.username %}" class="me-2">
+                                                {% if reply.author.profile.avatar %}
+                                                    <img src="{{ reply.author.profile.avatar.url }}" class="rounded-circle" width="28" height="28" style="object-fit: cover;" alt="{{ reply.author.username }}">
+                                                {% else %}
+                                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
+                                                        <i class="fas fa-user text-white small"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </a>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between">
+                                                    <div>
+                                                        <strong>
+                                                            <a href="{% url 'users:profile' reply.author.username %}" class="text-decoration-none">
+                                                                {{ reply.author.username }}
+                                                            </a>
+                                                        </strong>
+                                                        <small class="text-muted ms-2">{{ reply.created_at|date:"d.m.Y H:i" }}</small>
+                                                    </div>
+
+                                                    {% if user == reply.author or user == idea.author %}
+                                                        <a href="{% url 'ideas:delete_comment' reply.id %}"
+                                                           class="btn btn-sm btn-link text-danger"
+                                                           onclick="return confirm('Удалить комментарий?')">
+                                                            <i class="fas fa-times"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                                <p class="mb-0">{{ reply.content }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted text-center py-4">Пока нет комментариев. Будьте первым!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Боковая панель -->
+    <div class="col-md-4">
+        <!-- Информация об авторе -->
+        <div class="card mb-3">
+            <div class="card-body text-center">
+                <h5>Об авторе</h5>
+                <a href="{% url 'users:profile' idea.author.username %}">
+                    {% if idea.author.profile.avatar %}
+                        <img src="{{ idea.author.profile.avatar.url }}" class="rounded-circle mb-2" width="80" height="80" style="object-fit: cover;" alt="{{ idea.author.username }}">
+                    {% else %}
+                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 80px; height: 80px;">
+                            <i class="fas fa-user fa-3x text-white"></i>
+                        </div>
+                    {% endif %}
+                </a>
+                <h6>{{ idea.author.username }}</h6>
+                {% if idea.author.profile.bio %}
+                    <p class="small">{{ idea.author.profile.bio|truncatewords:20 }}</p>
+                {% endif %}
+
+                <div class="row mt-3">
+                    <div class="col-4">
+                        <strong>{{ idea.author.profile.total_followers }}</strong>
+                        <small class="d-block text-muted">подписчиков</small>
+                    </div>
+                    <div class="col-4">
+                        <strong>{{ idea.author.profile.total_following }}</strong>
+                        <small class="d-block text-muted">подписок</small>
+                    </div>
+                    <div class="col-4">
+                        <strong>{{ idea.author.profile.total_friends }}</strong>
+                        <small class="d-block text-muted">друзей</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // AJAX для лайков
+    $('#like-form').on('submit', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        $.ajax({
+            type: 'POST',
+            url: form.attr('action'),
+            data: form.serialize(),
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            success: function(data) {
+                $('.like-count').text(data.total_likes);
+                var heart = $('.like-btn i');
+                if (data.liked) {
+                    heart.addClass('text-danger');
+                } else {
+                    heart.removeClass('text-danger');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log("Ошибка:", error);
+            }
+        });
+    });
+
+    // Показ/скрытие формы ответа
+    $('.reply-btn').click(function() {
+        var commentId = $(this).data('comment-id');
+        $('#reply-form-' + commentId).show();
+        $(this).hide();
+    });
+
+    $('.cancel-reply').click(function() {
+        $(this).closest('.reply-form').hide();
+        var commentId = $(this).closest('.reply-form').attr('id').replace('reply-form-', '');
+        $('.reply-btn[data-comment-id="' + commentId + '"]').show();
+    });
+});
+</script>
+{% endblock %}

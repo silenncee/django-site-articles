@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}IdeaVault - Копилка идей{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Кастомные стили -->
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        main {
+            flex: 1;
+        }
+        .idea-card {
+            transition: transform 0.2s;
+            height: 100%;
+        }
+        .idea-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .avatar-large {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .avatar-medium {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .user-stat {
+            text-decoration: none;
+            color: inherit;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        .user-stat:hover {
+            background-color: #e9ecef;
+        }
+        .comment {
+            border-left: 3px solid #dee2e6;
+            padding-left: 15px;
+            margin-bottom: 15px;
+        }
+        .reply {
+            margin-left: 30px;
+            border-left: 2px solid #adb5bd;
+            padding-left: 15px;
+        }
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            margin: 2px;
+            background-color: #e9ecef;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            color: #495057;
+            text-decoration: none;
+        }
+        .tag:hover {
+            background-color: #dee2e6;
+            color: #212529;
+        }
+        .footer {
+            background-color: #343a40;
+            color: white;
+            padding: 20px 0;
+            margin-top: 50px;
+        }
+        /* Аудио плеер */
+.audio-player audio {
+    border-radius: 30px;
+    background: #f1f3f4;
+}
+
+.audio-player audio::-webkit-media-controls-panel {
+    background: #f1f3f4;
+}
+
+/* Анимация для иконки музыки */
+@keyframes musicWave {
+    0% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.2); opacity: 1; color: #0dcaf0; }
+    100% { transform: scale(1); opacity: 0.5; }
+}
+
+.fa-music.text-info {
+    animation: musicWave 2s infinite;
+}
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Шапка -->
+    {% include 'includes/header.html' %}
+
+    <!-- Основной контент -->
+    <main>
+        <div class="container mt-4">
+            <!-- Сообщения (flash messages) -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Контент страницы -->
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Подвал -->
+    {% include 'includes/footer.html' %}
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery (для AJAX) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Кастомный JS -->
+    <script>
+        // Автоматическое скрытие алертов через 5 секунд
+        setTimeout(function() {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Вход в систему{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Вход в систему</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <strong>Ошибка:</strong> Неправильное имя пользователя или пароль.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">Имя пользователя</label>
+                        <input type="text" 
+                               name="username" 
+                               class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                               id="id_username" 
+                               value="{{ form.username.value|default:'' }}"
+                               required>
+                        {% if form.username.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.username.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_password" class="form-label">Пароль</label>
+                        <input type="password" 
+                               name="password" 
+                               class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
+                               id="id_password" 
+                               required>
+                        {% if form.password.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.password.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-sign-in-alt"></i> Войти
+                    </button>
+                    
+                    <input type="hidden" name="next" value="{{ next }}">
+                </form>
+                
+                <hr>
+                
+                <p class="text-center mb-0">
+                    Нет аккаунта? <a href="{% url 'users:register' %}">Зарегистрироваться</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

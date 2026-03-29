@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load tz %}
+
+{% block title %}Лента активности{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Заголовок -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-stream text-primary"></i> Лента активности
+            </h1>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-filter"></i> Фильтр
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="?type=all">Всё</a></li>
+                    <li><a class="dropdown-item" href="?type=ideas">Только идеи</a></li>
+                    <li><a class="dropdown-item" href="?type=comments">Только комментарии</a></li>
+                    <li><a class="dropdown-item" href="?type=likes">Только лайки</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Лента -->
+        {% if activities %}
+            <div class="feed">
+                {% for activity in activities %}
+                    <div class="card mb-3 feed-item" data-type="{{ activity.type }}">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <!-- Аватар -->
+                                <a href="{% url 'users:profile' activity.user.username %}" class="me-3">
+                                    {% if activity.user.profile.avatar %}
+                                        <img src="{{ activity.user.profile.avatar.url }}" 
+                                             class="rounded-circle" 
+                                             width="50" height="50" 
+                                             style="object-fit: cover;"
+                                             alt="{{ activity.user.username }}">
+                                    {% else %}
+                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" 
+                                             style="width: 50px; height: 50px;">
+                                            <i class="fas fa-user fa-2x text-white"></i>
+                                        </div>
+                                    {% endif %}
+                                </a>
+                                
+                                <!-- Контент -->
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>
+                                                <a href="{% url 'users:profile' activity.user.username %}" class="text-decoration-none">
+                                                    {{ activity.user.username }}
+                                                </a>
+                                            </strong>
+                                            
+                                            {% if activity.type == 'idea' %}
+                                                <span class="text-muted">опубликовал новую идею</span>
+                                            {% elif activity.type == 'comment' %}
+                                                <span class="text-muted">прокомментировал</span>
+                                            {% elif activity.type == 'like' %}
+                                                <span class="text-muted">лайкнул</span>
+                                            {% elif activity.type == 'friend' %}
+                                                <span class="text-muted">подружился с</span>
+                                                <strong>
+                                                    <a href="{% url 'users:profile' activity.target.username %}" class="text-decoration-none">
+                                                        {{ activity.target.username }}
+                                                    </a>
+                                                </strong>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% timezone "Europe/Moscow" %}
+                                        <small class="text-muted">{{ activity.created_at|date:"d.m.Y H:i" }}</small>
+                                        {% endtimezone %}
+                                    </div>
+                                    
+                                    <!-- Детали активности -->
+                                    {% if activity.type == 'idea' and activity.idea %}
+                                        <div class="mt-2 p-3 bg-light rounded">
+                                            <h6>
+                                                <a href="{% url 'ideas:idea_detail' activity.idea.id %}" class="text-decoration-none">
+                                                    {{ activity.idea.title }}
+                                                </a>
+                                            </h6>
+                                            <p class="mb-0">{{ activity.idea.content|truncatewords:30 }}</p>
+                                        </div>
+                                    {% elif activity.type == 'comment' and activity.comment %}
+                                        <div class="mt-2 p-3 bg-light rounded">
+                                            <p class="mb-1">
+                                                <i class="fas fa-quote-left text-muted"></i>
+                                                {{ activity.comment.content|truncatewords:30 }}
+                                                <i class="fas fa-quote-right text-muted"></i>
+                                            </p>
+                                            <small>
+                                                <a href="{% url 'ideas:idea_detail' activity.comment.idea.id %}" class="text-muted">
+                                                    к идее "{{ activity.comment.idea.title }}"
+                                                </a>
+                                            </small>
+                                        </div>
+                                    {% elif activity.type == 'like' and activity.idea %}
+                                        <div class="mt-2">
+                                            <a href="{% url 'ideas:idea_detail' activity.idea.id %}" class="text-decoration-none">
+                                                <i class="fas fa-heart text-danger"></i> 
+                                                Идея "{{ activity.idea.title }}"
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Пагинация -->
+            {% if activities.has_other_pages %}
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if activities.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ activities.previous_page_number }}{% if type %}&type={{ type }}{% endif %}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in activities.paginator.page_range %}
+                            {% if activities.number == num %}
+                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > activities.number|add:'-3' and num < activities.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if type %}&type={{ type }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if activities.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ activities.next_page_number }}{% if type %}&type={{ type }}{% endif %}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+        {% else %}
+            <!-- Пустая лента -->
+            <div class="text-center py-5">
+                <i class="fas fa-stream fa-4x text-muted mb-3"></i>
+                <h3 class="text-muted">В ленте пока пусто</h3>
+                <p class="text-muted mb-4">
+                    Подпишитесь на интересных авторов, чтобы видеть их активность здесь
+                </p>
+                <a href="{% url 'users:suggestions' %}" class="btn btn-primary">
+                    <i class="fas fa-lightbulb"></i> Найти рекомендации
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Боковая панель -->
+    <div class="col-md-4">
+        <!-- Статистика -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Ваша статистика</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h4>{{ user.profile.followers_count }}</h4>
+                        <small class="text-muted">Подписчики</small>
+                    </div>
+                    <div class="col-4">
+                        <h4>{{ user.profile.following_count }}</h4>
+                        <small class="text-muted">Подписки</small>
+                    </div>
+                    <div class="col-4">
+                        <h4>{{ user.profile.friends_count }}</h4>
+                        <small class="text-muted">Друзья</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4>{{ user.profile.ideas_count }}</h4>
+                        <small class="text-muted">Идей</small>
+                    </div>
+                    <div class="col-6">
+                        <h4>{{ total_likes_received|default:0 }}</h4>
+                        <small class="text-muted">Лайков получено</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Кого добавить в друзья -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Возможные друзья</h5>
+            </div>
+            <div class="card-body">
+                {% if suggestions %}
+                    {% for suggestion in suggestions|slice:":3" %}
+                        <div class="d-flex align-items-center mb-3">
+                            <a href="{% url 'users:profile' suggestion.user.username %}" class="me-2">
+                                {% if suggestion.avatar %}
+                                    <img src="{{ suggestion.avatar.url }}" 
+                                         class="rounded-circle" 
+                                         width="40" height="40" 
+                                         style="object-fit: cover;"
+                                         alt="{{ suggestion.user.username }}">
+                                {% else %}
+                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            <div class="flex-grow-1">
+                                <strong>{{ suggestion.user.username }}</strong>
+                                <br>
+                                <small class="text-muted">{{ suggestion.followers_count }} подписчиков</small>
+                            </div>
+                            <form action="{% url 'users:follow_toggle' suggestion.user.username %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                    <a href="{% url 'users:suggestions' %}" class="btn btn-outline-primary btn-sm w-100">
+                        Показать еще
+                    </a>
+                {% else %}
+                    <p class="text-muted text-center mb-0">Нет рекомендаций</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Фильтрация ленты (если нужно без перезагрузки)
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterLinks = document.querySelectorAll('.dropdown-menu .dropdown-item');
+        filterLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = new URL(window.location.href);
+                url.searchParams.set('type', this.href.split('type=')[1]);
+                window.location.href = url.toString();
+            });
+        });
+    });
+</script>
+{% endblock %}

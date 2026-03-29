@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Главная - IdeaVault{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>Последние идеи</h1>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-sort"></i> Сортировка
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="?sort=-created_at">Новые</a></li>
+                <li><a class="dropdown-item" href="?sort=created_at">Старые</a></li>
+                <li><a class="dropdown-item" href="?sort=-likes_count">Популярные</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Поиск -->
+<div class="row mb-4">
+    <div class="col-md-6 mx-auto">
+        <form method="get" class="d-flex">
+            <input type="text" name="q" class="form-control me-2" placeholder="Текст или @ник…" value="{{ query|default:'' }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if user_hits %}
+<div class="alert alert-secondary mb-4">
+    <h6 class="alert-heading mb-2"><i class="fas fa-user"></i> Люди{% if user_search_term %} по «@{{ user_search_term }}»{% endif %}</h6>
+    <div class="d-flex flex-wrap gap-2">
+        {% for u in user_hits %}
+            <a href="{% url 'users:profile' u.username %}" class="btn btn-sm btn-outline-dark">@{{ u.username }}</a>
+        {% endfor %}
+    </div>
+    {% if user.is_authenticated %}
+        <hr class="my-2">
+        <small><a href="{% url 'users:search_users' %}?q={% if query %}{{ query|urlencode }}{% else %}@{{ user_search_term|urlencode }}{% endif %}">Расширенный поиск людей →</a></small>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Сетка идей в стиле Pinterest -->
+<div class="row" data-masonry='{"percentPosition": true }'>
+    {% for idea in ideas %}
+        <div class="col-sm-6 col-lg-4 mb-4">
+            <div class="card">
+                <a href="{% url 'ideas:idea_detail' idea.id %}" class="text-decoration-none text-dark">
+                    {% if idea.image %}
+                        <img src="{{ idea.image.url }}" class="card-img-top" alt="{{ idea.title }}">
+                    {% endif %}
+
+                    <div class="card-body">
+                        <h5 class="card-title">{{ idea.title }}</h5>
+                        <p class="card-text">{{ idea.content|truncatewords:20 }}</p>
+
+                        <!-- Отображение аудио -->
+                        {% if idea.has_audio %}
+                            <div class="mb-2 p-2 bg-light rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-music text-info me-2"></i>
+                                    <div class="flex-grow-1">
+                                        <small class="text-muted">
+                                            {% if idea.audio_title %}
+                                                {{ idea.audio_title }}
+                                            {% else %}
+                                                Аудиофайл
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <i class="fas fa-play-circle text-info"></i>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Теги (если будут) -->
+                        {% if idea.tags.exists %}
+                            <div class="mb-2">
+                                {% for tag in idea.tags.all|slice:":3" %}
+                                    <span class="badge bg-light text-dark me-1">#{{ tag.name }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="card-footer bg-white border-top-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                {% if idea.author.profile.avatar %}
+                                    <img src="{{ idea.author.profile.avatar.url }}"
+                                         class="rounded-circle me-2"
+                                         width="24" height="24"
+                                         style="object-fit: cover;"
+                                         alt="{{ idea.author.username }}">
+                                {% else %}
+                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                         style="width: 24px; height: 24px;">
+                                        <i class="fas fa-user fa-xs text-white"></i>
+                                    </div>
+                                {% endif %}
+                                <small class="text-muted">
+                                    {{ idea.author.username }}
+                                </small>
+                            </div>
+                            <div>
+                                {% if idea.has_audio %}
+                                    <small class="text-muted me-2" title="Есть аудио">
+                                        <i class="fas fa-music text-info"></i>
+                                    </small>
+                                {% endif %}
+                                <small class="text-muted me-2">
+                                    <i class="fas fa-heart text-danger"></i> {{ idea.total_likes }}
+                                </small>
+                                <small class="text-muted">
+                                    <i class="fas fa-comment text-primary"></i> {{ idea.comments.count }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle"></i> Пока нет идей. Будьте первым!
+                {% if user.is_authenticated %}
+                    <a href="{% url 'ideas:idea_create' %}" class="alert-link">Создать идею</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Пагинация -->
+{% if ideas.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if ideas.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ideas.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if sort %}&sort={{ sort|urlencode }}{% endif %}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in ideas.paginator.page_range %}
+                {% if ideas.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > ideas.number|add:'-3' and num < ideas.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if sort %}&sort={{ sort|urlencode }}{% endif %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if ideas.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ideas.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if sort %}&sort={{ sort|urlencode }}{% endif %}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- Masonry для Pinterest-подобной сетки -->
+<script src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js"></script>
+<script>
+    // Инициализация Masonry после загрузки страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        var grid = document.querySelector('.row[data-masonry]');
+        if (grid) {
+            var msnry = new Masonry(grid, {
+                itemSelector: '.col-sm-6.col-lg-4',
+                percentPosition: true
+            });
+        }
+    });
+</script>
+{% endblock %}

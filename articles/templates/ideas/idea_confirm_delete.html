@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление идеи{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Подтверждение удаления</h4>
+            </div>
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
+                
+                <h5 class="mb-3">Вы уверены, что хотите удалить идею "{{ idea.title }}"?</h5>
+                
+                <p class="text-muted mb-4">Это действие нельзя отменить.</p>
+                
+                <div class="card mb-4 bg-light">
+                    <div class="card-body">
+                        <h6>{{ idea.title }}</h6>
+                        <p class="small">{{ idea.content|truncatewords:30 }}</p>
+                        <div class="text-muted small">
+                            <span class="me-3">
+                                <i class="fas fa-heart text-danger"></i> {{ idea.total_likes }}
+                            </span>
+                            <span>
+                                <i class="fas fa-comment text-primary"></i> {{ idea.comments.count }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="javascript:history.back()" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Отмена
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

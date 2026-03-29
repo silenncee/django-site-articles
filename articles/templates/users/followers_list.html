@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-users"></i> {{ title }}
+                </h4>
+                <a href="{% url 'users:profile' profile.user.username %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Назад к профилю
+                </a>
+            </div>
+            
+            <div class="card-body">
+                {% if users %}
+                    {% for user_item in users %}
+                        <div class="d-flex align-items-center mb-3 p-3 border-bottom">
+                            <!-- Аватар -->
+                            <a href="{% url 'users:profile' user_item.user.username %}" class="me-3">
+                                {% if user_item.avatar %}
+                                    <img src="{{ user_item.avatar.url }}" class="rounded-circle" width="50" height="50" style="object-fit: cover;" alt="{{ user_item.user.username }}">
+                                {% else %}
+                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-user fa-2x text-white"></i>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            
+                            <!-- Информация -->
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1">
+                                    <a href="{% url 'users:profile' user_item.user.username %}" class="text-decoration-none">
+                                        {{ user_item.get_full_name|default:user_item.user.username }}
+                                    </a>
+                                </h5>
+                                <p class="text-muted mb-1">@{{ user_item.user.username }}</p>
+                                
+                                {% if user_item.bio %}
+                                    <p class="mb-0 small">{{ user_item.bio|truncatechars:100 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Статус -->
+                            {% if user.is_authenticated and user != user_item.user %}
+                                <div class="ms-3">
+                                    {% if user_item.relationship == 'friend' %}
+                                        <span class="badge bg-success">В друзьях</span>
+                                    {% elif user_item.relationship == 'following' %}
+                                        <span class="badge bg-info">Вы подписаны</span>
+                                    {% elif user_item.relationship == 'follower' %}
+                                        <span class="badge bg-secondary">Подписан на вас</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    
+                    <!-- Пагинация -->
+                    {% if users.has_other_pages %}
+                        <nav class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if users.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ users.previous_page_number }}">←</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in users.paginator.page_range %}
+                                    {% if users.number == num %}
+                                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if users.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ users.next_page_number }}">→</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Список пуст</h5>
+                        <p>У пользователя пока нет подписчиков</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

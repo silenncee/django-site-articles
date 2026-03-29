@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Поиск людей - IdeaVault{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Поиск людей</h1>
+<form method="get" class="row g-2 mb-4" action="{% url 'users:search_users' %}">
+    <div class="col-md-8">
+        <input type="search" name="q" class="form-control" placeholder="@username или имя…" value="{{ raw_query|default:query }}">
+    </div>
+    <div class="col-md-4">
+        <button type="submit" class="btn btn-primary w-100">Найти</button>
+    </div>
+</form>
+
+{% if query %}
+    {% if users %}
+        <ul class="list-group">
+            {% for u in users %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="{% url 'users:profile' u.username %}" class="fw-semibold text-decoration-none">@{{ u.username }}</a>
+                        {% if u.first_name or u.last_name %}
+                            <span class="text-muted">{{ u.first_name }} {{ u.last_name }}</span>
+                        {% endif %}
+                        {% if u.relationship %}
+                            <span class="badge bg-secondary ms-1">{{ u.relationship }}</span>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'users:profile' u.username %}" class="btn btn-sm btn-outline-primary">Профиль</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">Никого не нашли по запросу «{{ query }}».</p>
+    {% endif %}
+{% else %}
+    <p class="text-muted">Введите @ник или имя.</p>
+{% endif %}
+{% endblock %}

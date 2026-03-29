@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Название -->
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">Название</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.title.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Содержание -->
+                    <div class="mb-3">
+                        <label for="{{ form.content.id_for_label }}" class="form-label">Содержание</label>
+                        {{ form.content }}
+                        {% if form.content.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.content.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Изображение -->
+                    <div class="mb-3">
+                        <label for="{{ form.image.id_for_label }}" class="form-label">Изображение (необязательно)</label>
+
+                        {% if form.instance.image %}
+                            <div class="mb-2">
+                                <img src="{{ form.instance.image.url }}" class="img-thumbnail" style="max-height: 200px;" alt="Current image">
+                                <p class="text-muted small mt-1">Текущее изображение</p>
+                            </div>
+                        {% endif %}
+
+                        {{ form.image }}
+                        {% if form.image.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.image.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Оставьте пустым, если не хотите менять изображение</small>
+                    </div>
+
+                    <!-- Аудио блок -->
+                    <div class="card mt-3 mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-music"></i> Прикрепить аудио (необязательно)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                Вы можете загрузить MP3 файл (максимум 10 МБ)
+                            </div>
+
+                            {% if form.instance.audio %}
+                                <div class="mb-3 p-3 bg-light rounded">
+                                    <h6>Текущий аудиофайл:</h6>
+                                    <audio controls class="w-100">
+                                        <source src="{{ form.instance.audio.url }}" type="audio/mpeg">
+                                        Ваш браузер не поддерживает аудио.
+                                    </audio>
+                                    <p class="text-muted small mt-2">{{ form.instance.audio_filename }}</p>
+                                </div>
+                            {% endif %}
+
+                            <div class="mb-3">
+                                <label for="{{ form.audio_title.id_for_label }}" class="form-label">Название трека</label>
+                                {{ form.audio_title }}
+                                <small class="text-muted">Например: "Bohemian Rhapsody - Queen"</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.audio.id_for_label }}" class="form-label">MP3 файл</label>
+                                {{ form.audio }}
+                                {% if form.audio.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.audio.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <small class="text-muted">Оставьте пустым, если не хотите менять аудио</small>
+                            </div>
+
+                            <!-- Предпросмотр -->
+                            <div id="audio-preview" class="mt-3 p-3 bg-light rounded" style="display: none;">
+                                <h6>Предпросмотр:</h6>
+                                <div id="audio-preview-title"></div>
+                                <audio id="audio-preview-player" controls class="w-100">
+                                    <source src="" type="audio/mpeg">
+                                </audio>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Кнопки -->
+                    <div class="d-flex justify-content-between">
+                        <a href="javascript:history.back()" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Назад
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {{ button_text }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Предпросмотр аудио
+document.getElementById('id_audio').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('audio-preview');
+    const previewPlayer = document.getElementById('audio-preview-player');
+    const previewTitle = document.getElementById('audio-preview-title');
+
+    if (file) {
+        // Проверка типа файла
+        if (file.type !== 'audio/mpeg' && file.type !== 'audio/mp3') {
+            alert('Пожалуйста, выберите MP3 файл');
+            this.value = '';
+            return;
+        }
+
+        // Проверка размера (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('Файл слишком большой. Максимальный размер - 10 МБ');
+            this.value = '';
+            return;
+        }
+
+        const url = URL.createObjectURL(file);
+        previewPlayer.querySelector('source').src = url;
+        previewPlayer.load();
+
+        // Если название трека не заполнено, используем имя файла
+        const titleInput = document.getElementById('id_audio_title');
+        if (!titleInput.value) {
+            titleInput.value = file.name.replace('.mp3', '');
+        }
+
+        previewTitle.innerHTML = `<strong>${file.name}</strong> (${(file.size/1024/1024).toFixed(2)} MB)`;
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+});
+
+// Автозаполнение названия из имени файла
+document.getElementById('id_audio_title').addEventListener('input', function() {
+    // Просто отслеживаем ввод
+});
+</script>
+{% endblock %}

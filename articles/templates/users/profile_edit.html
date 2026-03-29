@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Редактирование профиля{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Редактирование профиля</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Аватар -->
+                    <div class="text-center mb-4">
+                        <label class="form-label d-block">Текущий аватар</label>
+                        {% if profile.avatar %}
+                            <img src="{{ profile.avatar.url }}" class="rounded-circle mb-3" id="avatar-preview" style="width: 150px; height: 150px; object-fit: cover;" alt="Avatar">
+                        {% else %}
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" id="avatar-preview" style="width: 150px; height: 150px;">
+                                <i class="fas fa-user fa-4x text-white"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="avatar" class="form-label">Изменить аватар</label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="avatar" 
+                                   name="avatar" 
+                                   accept="image/*">
+                            <small class="text-muted">Оставьте пустым, если не хотите менять аватар</small>
+                        </div>
+                    </div>
+                    
+                    <!-- ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ (ТЕПЕРЬ МОЖНО РЕДАКТИРОВАТЬ) -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">Учетные данные</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Имя пользователя должно быть уникальным. Email также должен быть уникальным.
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="username" class="form-label">Имя пользователя *</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="username"
+                                           name="username"
+                                           value="{{ profile.user.username }}"
+                                           required>
+                                    <small class="text-muted">Только буквы, цифры и @/./+/-/_</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email"
+                                           class="form-control"
+                                           id="email"
+                                           name="email"
+                                           value="{{ profile.user.email }}"
+                                           required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ЛИЧНАЯ ИНФОРМАЦИЯ -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">Личная информация</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="first_name" class="form-label">Имя</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="first_name"
+                                           name="first_name"
+                                           value="{{ profile.user.first_name|default:'' }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="last_name" class="form-label">Фамилия</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="last_name"
+                                           name="last_name"
+                                           value="{{ profile.user.last_name|default:'' }}">
+                                </div>
+                            </div>
+
+                            <!-- О себе -->
+                            <div class="mb-3">
+                                <label for="bio" class="form-label">О себе</label>
+                                <textarea class="form-control" id="bio" name="bio" rows="5" maxlength="500">{{ profile.bio }}</textarea>
+                                <small class="text-muted">Максимум 500 символов. Осталось: <span id="bio-counter">500</span></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Социальные сети -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Социальные сети</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="website" class="form-label">Веб-сайт</label>
+                                    <input type="url" class="form-control" id="website" name="website" value="{{ profile.website|default:'' }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="github" class="form-label">GitHub</label>
+                                    <input type="url" class="form-control" id="github" name="github" value="{{ profile.github|default:'' }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="telegram" class="form-label">Telegram (без @)</label>
+                                    <input type="text" class="form-control" id="telegram" name="telegram" value="{{ profile.telegram|default:'' }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="instagram" class="form-label">Instagram</label>
+                                    <input type="text" class="form-control" id="instagram" name="instagram" value="{{ profile.instagram|default:'' }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="twitter" class="form-label">Twitter</label>
+                                    <input type="text" class="form-control" id="twitter" name="twitter" value="{{ profile.twitter|default:'' }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="linkedin" class="form-label">LinkedIn</label>
+                                    <input type="url" class="form-control" id="linkedin" name="linkedin" value="{{ profile.linkedin|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Настройки приватности -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-warning">
+                            <h5 class="mb-0">Приватность</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="privacy_profile" class="form-label">Кто видит профиль</label>
+                                    <select class="form-control" id="privacy_profile" name="privacy_profile">
+                                        <option value="public" {% if profile.privacy_profile == 'public' %}selected{% endif %}>Публичный</option>
+                                        <option value="friends" {% if profile.privacy_profile == 'friends' %}selected{% endif %}>Только друзья</option>
+                                        <option value="private" {% if profile.privacy_profile == 'private' %}selected{% endif %}>Приватный</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="privacy_ideas" class="form-label">Кто видит идеи</label>
+                                    <select class="form-control" id="privacy_ideas" name="privacy_ideas">
+                                        <option value="public" {% if profile.privacy_ideas == 'public' %}selected{% endif %}>Публичный</option>
+                                        <option value="friends" {% if profile.privacy_ideas == 'friends' %}selected{% endif %}>Только друзья</option>
+                                        <option value="private" {% if profile.privacy_ideas == 'private' %}selected{% endif %}>Приватный</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="privacy_friends" class="form-label">Кто видит друзей</label>
+                                    <select class="form-control" id="privacy_friends" name="privacy_friends">
+                                        <option value="public" {% if profile.privacy_friends == 'public' %}selected{% endif %}>Публичный</option>
+                                        <option value="friends" {% if profile.privacy_friends == 'friends' %}selected{% endif %}>Только друзья</option>
+                                        <option value="private" {% if profile.privacy_friends == 'private' %}selected{% endif %}>Приватный</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Кнопки -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'users:profile' profile.user.username %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Назад
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Сохранить изменения
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Превью аватара
+document.getElementById('avatar').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('avatar-preview');
+            if (preview.tagName === 'IMG') {
+                preview.src = e.target.result;
+            } else {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'rounded-circle mb-3';
+                img.id = 'avatar-preview';
+                img.style = 'width: 150px; height: 150px; object-fit: cover;';
+                preview.parentNode.replaceChild(img, preview);
+            }
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Счетчик символов для bio
+const bioTextarea = document.getElementById('bio');
+const bioCounter = document.getElementById('bio-counter');
+
+function updateCounter() {
+    const remaining = 500 - bioTextarea.value.length;
+    bioCounter.textContent = remaining;
+    bioCounter.style.color = remaining < 50 ? 'red' : (remaining < 100 ? 'orange' : 'green');
+}
+
+bioTextarea.addEventListener('input', updateCounter);
+updateCounter();
+</script>
+{% endblock %}

@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load tz %}
+
+{% block title %}{{ profile.user.username }} - профиль{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <!-- Карточка профиля -->
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <!-- Аватар -->
+                {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" class="rounded-circle img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="{{ profile.user.username }}">
+                {% else %}
+                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px;">
+                        <i class="fas fa-user fa-4x text-white"></i>
+                    </div>
+                {% endif %}
+
+                <!-- Статус онлайн -->
+                <div class="mb-2">
+                    {% if profile.status == 'online' %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-circle"></i> Онлайн
+                        </span>
+                    {% elif profile.status == 'away' %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-clock"></i> Отошел
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-circle"></i> Офлайн
+                        </span>
+                    {% endif %}
+
+                    {% timezone "Europe/Moscow" %}
+                    <small class="text-muted ms-2">
+                        Был(а): {{ profile.last_seen|date:"d.m.Y H:i" }}
+                    </small>
+                    {% endtimezone %}
+                </div>
+
+                <h3>{{ profile.get_full_name }}</h3>
+                <p class="text-muted">@{{ profile.user.username }}</p>
+
+                <!-- О себе -->
+                {% if profile.bio %}
+                    <p class="mt-3">{{ profile.bio }}</p>
+                {% else %}
+                    <p class="text-muted mt-3"><em>Пока ничего не рассказал(а) о себе</em></p>
+                {% endif %}
+
+                <!-- Социальные сети -->
+                {% if social_links %}
+                    <div class="mt-3">
+                        <h6>Социальные сети</h6>
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
+                            {% if social_links.website %}
+                                <a href="{{ social_links.website }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Веб-сайт">
+                                    <i class="fas fa-globe"></i>
+                                </a>
+                            {% endif %}
+                            {% if social_links.github %}
+                                <a href="{{ social_links.github }}" target="_blank" class="btn btn-sm btn-outline-dark" title="GitHub">
+                                    <i class="fab fa-github"></i>
+                                </a>
+                            {% endif %}
+                            {% if social_links.telegram %}
+                                <a href="{{ social_links.telegram }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Telegram">
+                                    <i class="fab fa-telegram"></i>
+                                </a>
+                            {% endif %}
+                            {% if social_links.instagram %}
+                                <a href="{{ social_links.instagram }}" target="_blank" class="btn btn-sm btn-outline-danger" title="Instagram">
+                                    <i class="fab fa-instagram"></i>
+                                </a>
+                            {% endif %}
+                            {% if social_links.twitter %}
+                                <a href="{{ social_links.twitter }}" target="_blank" class="btn btn-sm btn-outline-info" title="Twitter">
+                                    <i class="fab fa-twitter"></i>
+                                </a>
+                            {% endif %}
+                            {% if social_links.linkedin %}
+                                <a href="{{ social_links.linkedin }}" target="_blank" class="btn btn-sm btn-outline-primary" title="LinkedIn">
+                                    <i class="fab fa-linkedin"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Дата регистрации -->
+                <p class="text-muted small mt-3">
+                    <i class="fas fa-calendar-alt"></i>
+                    Зарегистрирован: {{ profile.user.date_joined|date:"d.m.Y" }}
+                </p>
+
+                <!-- Кнопки действий -->
+                {% if user.is_authenticated %}
+                    {% if user == profile.user %}
+                        <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Редактировать профиль
+                        </a>
+                    {% else %}
+                        <!-- Проверяем блокировки -->
+                        {% if is_blocked_by %}
+                            <div class="alert alert-warning mt-2">
+                                <i class="fas fa-ban"></i> Этот пользователь вас заблокировал
+                            </div>
+                        {% elif is_blocked %}
+                            <div class="alert alert-info mt-2">
+                                <i class="fas fa-ban"></i> Вы заблокировали этого пользователя
+                                <form action="{% url 'users:block_toggle' profile.user.username %}" method="post" class="mt-2">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-ban"></i> Разблокировать
+                                    </button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <div class="d-flex flex-column gap-2">
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <!-- Подписка -->
+                                    <form action="{% url 'users:follow_toggle' profile.user.username %}" method="post">
+                                        {% csrf_token %}
+                                        {% if is_following %}
+                                            <button type="submit" class="btn btn-outline-secondary">
+                                                <i class="fas fa-user-minus"></i> Отписаться
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-user-plus"></i> Подписаться
+                                            </button>
+                                        {% endif %}
+                                    </form>
+
+                                    <!-- Блокировка -->
+                                    <form action="{% url 'users:block_toggle' profile.user.username %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="fas fa-ban"></i> Заблокировать
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- Кнопка друзей (только если взаимная подписка) -->
+                                {% if is_following and is_follower %}
+                                    <form action="{% url 'users:friend_toggle' profile.user.username %}" method="post" class="mt-2">
+                                        {% csrf_token %}
+                                        {% if is_friend %}
+                                            <button type="submit" class="btn btn-success w-100">
+                                                <i class="fas fa-check"></i> В друзьях
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-outline-success w-100">
+                                                <i class="fas fa-user-friends"></i> Добавить в друзья
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                {% endif %}
+
+                                <!-- Кнопка сообщения (если разрешено) -->
+                                {% if can_send_message %}
+                                    <a href="{% url 'users:chat_thread' profile.user.username %}" class="btn btn-outline-primary mt-2">
+                                        <i class="fas fa-envelope"></i> Написать сообщение
+                                    </a>
+                                {% endif %}
+                            </div>
+
+                            <!-- Статус отношений -->
+                            {% if relationship %}
+                                <p class="mt-2 text-muted small">
+                                    Статус:
+                                    {% if relationship == 'friend' %}
+                                        <span class="text-success">✓ В друзьях</span>
+                                    {% elif relationship == 'following' %}
+                                        <span class="text-info">Вы подписаны</span>
+                                    {% elif relationship == 'follower' %}
+                                        <span class="text-secondary">Подписан на вас</span>
+                                    {% elif relationship == 'blocked' %}
+                                        <span class="text-danger">Заблокирован</span>
+                                    {% elif relationship == 'blocked_by' %}
+                                        <span class="text-warning">Заблокировал вас</span>
+                                    {% else %}
+                                        <span class="text-muted">Не в друзьях</span>
+                                    {% endif %}
+                                </p>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Статистика (с проверкой приватности) -->
+        {% if can_view_friends or user == profile.user %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <a href="{% url 'users:followers_list' profile.user.username %}" class="text-decoration-none text-dark">
+                                <h4>{{ followers_count }}</h4>
+                                <small class="text-muted">Подписчики</small>
+                            </a>
+                        </div>
+                        <div class="col-4">
+                            <a href="{% url 'users:following_list' profile.user.username %}" class="text-decoration-none text-dark">
+                                <h4>{{ following_count }}</h4>
+                                <small class="text-muted">Подписки</small>
+                            </a>
+                        </div>
+                        <div class="col-4">
+                            <a href="{% url 'users:friends_list' profile.user.username %}" class="text-decoration-none text-dark">
+                                <h4>{{ friends_count }}</h4>
+                                <small class="text-muted">Друзья</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Общие друзья (если есть и есть доступ) -->
+        {% if mutual_friends and can_view_friends %}
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Общие друзья</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for friend in mutual_friends|slice:":5" %}
+                            <a href="{% url 'users:profile' friend.user.username %}" title="{{ friend.user.get_full_name }}">
+                                {% if friend.avatar %}
+                                    <img src="{{ friend.avatar.url }}" class="rounded-circle" width="40" height="40" style="object-fit: cover;" alt="{{ friend.user.username }}">
+                                {% else %}
+                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                        {% if mutual_friends.count > 5 %}
+                            <span class="text-muted">и еще {{ mutual_friends.count|add:"-5" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-8">
+        <!-- Идеи пользователя (с проверкой приватности) -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb"></i> Идеи пользователя ({{ ideas_count }})
+                </h5>
+                {% if user == profile.user %}
+                    <a href="{% url 'ideas:idea_create' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Новая идея
+                    </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if ideas %}
+                    {% for idea in ideas %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5>
+                                    <a href="{% url 'ideas:idea_detail' idea.id %}" class="text-decoration-none text-dark">
+                                        {{ idea.title }}
+                                    </a>
+                                </h5>
+
+                                {% if idea.image %}
+                                    <div class="text-center mb-3">
+                                        <img src="{{ idea.image.url }}" class="img-fluid rounded" style="max-height: 200px;" alt="{{ idea.title }}">
+                                    </div>
+                                {% endif %}
+
+                                <p>{{ idea.content|truncatewords:30 }}</p>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="me-3">
+                                            <i class="fas fa-heart text-danger"></i> {{ idea.total_likes }}
+                                        </span>
+                                        <span>
+                                            <i class="fas fa-comment text-primary"></i> {{ idea.comments.count }}
+                                        </span>
+                                    </div>
+                                    {% timezone "Europe/Moscow" %}
+                                    <small class="text-muted">{{ idea.created_at|date:"d.m.Y H:i" }}</small>
+                                    {% endtimezone %}
+                                </div>
+
+                                {% if user == profile.user %}
+                                    <div class="mt-2">
+                                        <a href="{% url 'ideas:idea_edit' idea.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'ideas:idea_delete' idea.id %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Пагинация -->
+                    {% if ideas.has_other_pages %}
+                        <nav>
+                            <ul class="pagination justify-content-center">
+                                {% if ideas.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ ideas.previous_page_number }}">←</a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in ideas.paginator.page_range %}
+                                    {% if ideas.number == num %}
+                                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > ideas.number|add:'-3' and num < ideas.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if ideas.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ ideas.next_page_number }}">→</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted text-center py-4">
+                        {% if user == profile.user %}
+                            У вас пока нет идей. <a href="{% url 'ideas:idea_create' %}">Создайте первую!</a>
+                        {% else %}
+                            У пользователя пока нет идей
+                        {% endif %}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

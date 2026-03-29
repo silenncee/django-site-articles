@@ -1,0 +1,86 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'ideas:idea_list' %}">
+            <i class="fas fa-lightbulb"></i> IdeaVault
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <!-- Поиск -->
+            <form class="d-flex mx-auto" action="{% url 'ideas:idea_list' %}" method="get" style="width: 400px;">
+                <div class="input-group">
+                    <input class="form-control" type="search" name="q" placeholder="Идеи, текст… @ник для людей" value="{{ query|default:'' }}">
+                    <button class="btn btn-outline-light" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Меню -->
+            <ul class="navbar-nav ms-auto">
+                {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            {% if user.profile.avatar %}
+                                <img src="{{ user.profile.avatar.url }}" class="avatar me-1" alt="avatar">
+                            {% else %}
+                                <i class="fas fa-user-circle"></i>
+                            {% endif %}
+                            {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'users:profile' user.username %}">
+                                    <i class="fas fa-user"></i> Мой профиль
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'users:feed' %}">
+                                    <i class="fas fa-stream"></i> Лента
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'users:chat_inbox' %}">
+                                    <i class="fas fa-comments"></i> Сообщения
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'ideas:idea_create' %}">
+                                    <i class="fas fa-plus-circle"></i> Новая идея
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'users:profile_edit' %}">
+                                    <i class="fas fa-cog"></i> Настройки
+                                </a>
+                            </li>
+                            <li>
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="fas fa-sign-out-alt"></i> Выйти
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">
+                            <i class="fas fa-sign-in-alt"></i> Войти
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:register' %}">
+                            <i class="fas fa-user-plus"></i> Регистрация
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
