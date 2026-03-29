@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-zqp+_&_(hose_#3wmicj^5wmm&e6u3g8i)ul*mi8^*x!9jl=ji
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS =  ['django-site-articles.onrender.com', 'localhost', '127.0.0.1']
 
 
 
